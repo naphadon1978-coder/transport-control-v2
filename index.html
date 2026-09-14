@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V26</title>
+<title>Transport Real-Time Control V27</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V26 • แยกรายงานตามเที่ยวจริง เที่ยว 2-3 ในวันเดียวกันไม่ปนกันแล้ว</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V27 • แก้เลขที่เที่ยวสำหรับรถที่มีอยู่ก่อนฟีเจอร์เที่ยวถูกสร้าง</div></div>
 <div id="clock"></div>
 </header>
 
@@ -187,7 +187,7 @@ pallets:10+(i%10)
 status:FACTORY_STEPS[Math.min(i%9,3)],
 time:"07:"+String(10+i%45).padStart(2,"0"),
 type:"",
-tripNumber:1,tripDate:todayLocalStr(),
+tripNumber:1,tripDate:null,
 verifiedDriver:null,verifiedTime:null,verifiedPhoto:null,
 assignedDriver:null,
 history:{}
@@ -406,7 +406,7 @@ let type=newTypeInput.value.trim();
 if(!plate){alert("กรุณาระบุทะเบียนรถ");return}
 if(trucks.some(t=>t.id===plate)){alert("มีทะเบียนรถนี้อยู่ในระบบแล้ว");return}
 trucks.push({id:plate,stops:[makeEmptyStop()],status:FACTORY_STEPS[0],time:now(),type:type,
-tripNumber:1,tripDate:todayLocalStr(),
+tripNumber:1,tripDate:null,
 verifiedDriver:null,verifiedTime:null,verifiedPhoto:null,assignedDriver:null,
 history:{[FACTORY_STEPS[0]]:{time:now(),ts:Date.now()}}});
 newPlateInput.value="";
@@ -659,8 +659,16 @@ function startNewTrip(){
 let i=+jobTruck.value,t=trucks[i];
 if(!confirm('เริ่มเที่ยวใหม่สำหรับรถ "'+t.id+'" ?\n\nการกระทำนี้จะ:\n• บันทึกข้อมูลลูกค้า/SO ที่กรอกไว้เป็นเที่ยวใหม่ (ไม่เก็บเวลาถึง/เสร็จของเที่ยวเก่า)\n• รีเซ็ตสถานะกลับไปเริ่มต้นที่ "เตรียมสินค้าแล้ว"\n• ล้างการยืนยันตัวตนคนขับเก่า (บังคับให้คนขับยืนยันตัวตนใหม่สำหรับเที่ยวนี้)'))return;
 let today=todayLocalStr();
-if(t.tripDate!==today){t.tripDate=today;t.tripNumber=1;}
-else t.tripNumber=(t.tripNumber||1)+1;
+if(t.tripDate==null){
+// รถคันนี้ยังไม่เคยกด "เริ่มเที่ยวใหม่" มาก่อนเลย ถือว่างานที่มีอยู่ก่อนหน้านี้คือเที่ยวที่ 1 ไปแล้วโดยปริยาย
+// ครั้งนี้จึงควรเป็นเที่ยวถัดไป ไม่ใช่เริ่มนับ 1 ใหม่
+t.tripNumber=(t.tripNumber||1)+1;
+t.tripDate=today;
+}else if(t.tripDate!==today){
+t.tripDate=today;t.tripNumber=1;
+}else{
+t.tripNumber=(t.tripNumber||1)+1;
+}
 t.history={}; // ล้างเวลาของเที่ยวเก่าทิ้ง กันเวลาเที่ยวก่อนหน้าปนเข้ามาในรายงานของเที่ยวใหม่
 t.stops=buildStopsFromForm(t,false);
 t.verifiedDriver=null;t.verifiedTime=null;t.verifiedTs=null;t.verifiedPhoto=null;
@@ -718,7 +726,7 @@ if(type){let ex=trucks.find(t=>t.id===plate);if(ex&&!ex.type){ex.type=type;updat
 continue;
 }
 let newT={id:plate,stops:[makeEmptyStop()],status:FACTORY_STEPS[0],time:now(),type:type,
-tripNumber:1,tripDate:todayLocalStr(),
+tripNumber:1,tripDate:null,
 verifiedDriver:null,verifiedTime:null,verifiedPhoto:null,assignedDriver:null,
 history:{[FACTORY_STEPS[0]]:{time:now(),ts:Date.now()}}};
 trucks.push(newT);
@@ -731,7 +739,7 @@ let plates=rows.map(r=>String(r&&r[0]!=null?r[0]:"").trim()).filter(Boolean);
 plates.forEach(p=>{
 if(trucks.some(t=>t.id===p)){skipped++;return}
 let newT={id:p,stops:[makeEmptyStop()],status:FACTORY_STEPS[0],time:now(),type:"",
-tripNumber:1,tripDate:todayLocalStr(),
+tripNumber:1,tripDate:null,
 verifiedDriver:null,verifiedTime:null,verifiedPhoto:null,assignedDriver:null,
 history:{[FACTORY_STEPS[0]]:{time:now(),ts:Date.now()}}};
 trucks.push(newT);
