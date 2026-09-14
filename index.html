@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V30</title>
+<title>Transport Real-Time Control V32</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V30 • จำรถที่เลือกไว้ในการ์ด Driver ไม่กระโดดกลับคันแรกตอนรีเฟรช</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V32 • แก้เลขที่เที่ยวสำหรับรถทะเบียนใหม่เอี่ยมที่ไม่เคยมีกิจกรรมเลย</div></div>
 <div id="clock"></div>
 </header>
 
@@ -82,6 +82,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 <button type="button" class="reason" style="text-align:center;font-weight:700;color:#b91c1c;border-color:#fecdd3" onclick="removeTruck()">🗑 ลบทะเบียนรถนี้ออกจากระบบ (รถออกจากกองยานถาวร)</button>
 <div id="adminTruckInfo" class="small" style="margin:-4px 0 12px;padding:8px 10px;background:#f8fafc;border-radius:8px"></div>
 <button type="button" class="reason" style="text-align:center;font-weight:700;color:#9a3412;border-color:#fed7aa" onclick="clearVerification()">🗑 ล้างข้อมูลยืนยันตัวตนคนขับ (ลบชื่อ+รูป)</button>
+<button type="button" class="reason" style="text-align:center;font-weight:700;color:#1d4ed8;border-color:#bfdbfe" onclick="resetTripCounter()">🔄 รีเซ็ตเลขที่เที่ยว (ไม่กระทบทะเบียนรถ/ข้อมูลอื่น)</button>
 <div style="margin-top:14px;padding-top:14px;border-top:1px dashed #d7dee8">
 <label>📥 อัปโหลดทะเบียนรถจากไฟล์ Excel/CSV (เพิ่มทีเดียวหลายคัน)</label>
 <input type="file" id="truckExcelInput" accept=".xlsx,.xls,.csv">
@@ -455,6 +456,16 @@ apiSaveTruck(t);
 alert("ล้างข้อมูลยืนยันตัวตนของรถ "+t.id+" เรียบร้อยแล้ว");
 }
 
+function resetTripCounter(){
+let i=+adminTruck.value,t=trucks[i];
+if(!confirm('รีเซ็ตเลขที่เที่ยวของรถ "'+t.id+'" กลับไปเริ่มที่ 1 ใหม่?\n\nเลขที่เที่ยวปัจจุบัน: '+(t.tripNumber||1)+'\n\nจะไม่กระทบทะเบียนรถ ประเภทรถ คนขับที่มอบหมาย หรือข้อมูลอื่นใดๆ เลย มีผลแค่เลขที่เที่ยวสำหรับรายงานเท่านั้น'))return;
+t.tripNumber=null;
+t.tripDate="1970-01-01"; // วันที่หลอกที่เก่ากว่าวันนี้แน่นอน บังคับให้ "เริ่มเที่ยวใหม่" ครั้งถัดไปนับ 1 ใหม่จริงๆ
+render();onAdminTruckChange();
+apiSaveTruck(t);
+alert("รีเซ็ตเลขที่เที่ยวของรถ "+t.id+" เรียบร้อยแล้ว — เที่ยวถัดไปจะเริ่มนับที่ 1 ใหม่");
+}
+
 function selectTruck(i){selected=i;driverTruck.value=i;renderTimeline()}
 
 function update(i,s){
@@ -663,14 +674,22 @@ function startNewTrip(){
 let i=+jobTruck.value,t=trucks[i];
 if(!confirm('เริ่มเที่ยวใหม่สำหรับรถ "'+t.id+'" ?\n\nการกระทำนี้จะ:\n• บันทึกข้อมูลลูกค้า/SO ที่กรอกไว้เป็นเที่ยวใหม่ (ไม่เก็บเวลาถึง/เสร็จของเที่ยวเก่า)\n• รีเซ็ตสถานะกลับไปเริ่มต้นที่ "เตรียมสินค้าแล้ว"\n• ล้างการยืนยันตัวตนคนขับเก่า (บังคับให้คนขับยืนยันตัวตนใหม่สำหรับเที่ยวนี้)'))return;
 let today=todayLocalStr();
+let hasExistingActivity=(t.status!==FACTORY_STEPS[0]); // สถานะไม่ใช่จุดเริ่มต้นสุด แปลว่ามีการทำงานเกิดขึ้นแล้ว
 if(t.tripDate==null){
-// รถคันนี้ยังไม่เคยกด "เริ่มเที่ยวใหม่" มาก่อนเลย ถือว่างานที่มีอยู่ก่อนหน้านี้คือเที่ยวที่ 1 ไปแล้วโดยปริยาย
-// ครั้งนี้จึงควรเป็นเที่ยวถัดไป ไม่ใช่เริ่มนับ 1 ใหม่
+if(hasExistingActivity){
+// รถคันนี้ยังไม่เคยกด "เริ่มเที่ยวใหม่" มาก่อนเลย แต่มีการทำงานไปแล้ว (แม้ไม่เคยกดปุ่มนี้)
+// ถือว่างานที่ผ่านมาคือเที่ยวที่ 1 ไปแล้วโดยปริยาย ครั้งนี้จึงควรเป็นเที่ยวถัดไป
 t.tripNumber=(t.tripNumber||1)+1;
+}else{
+// รถใหม่เอี่ยม ยังไม่เคยมีอะไรเกิดขึ้นเลย -> นี่คือเที่ยวแรกจริงๆ
+t.tripNumber=1;
+}
 t.tripDate=today;
 }else if(t.tripDate!==today){
+// เคยบันทึกไว้แล้วแต่เป็นคนละวัน -> ขึ้นวันใหม่ เริ่มนับ 1 ใหม่เสมอ
 t.tripDate=today;t.tripNumber=1;
 }else{
+// วันเดียวกันกับที่เคยบันทึกไว้ -> เที่ยวถัดไปของวันนี้
 t.tripNumber=(t.tripNumber||1)+1;
 }
 t.history={}; // ล้างเวลาของเที่ยวเก่าทิ้ง กันเวลาเที่ยวก่อนหน้าปนเข้ามาในรายงานของเที่ยวใหม่
