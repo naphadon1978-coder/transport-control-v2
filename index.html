@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V29</title>
+<title>Transport Real-Time Control V30</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V29 • แก้บั๊กร้ายแรง: เลิกเขียนข้อมูลทดสอบกลับเซิร์ฟเวอร์เวลาเน็ตสะดุด</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V30 • จำรถที่เลือกไว้ในการ์ด Driver ไม่กระโดดกลับคันแรกตอนรีเฟรช</div></div>
 <div id="clock"></div>
 </header>
 
@@ -251,6 +251,15 @@ function apiBulkImport(trucksArr,staffArr){
 return fetch(API_URL,{method:"POST",body:JSON.stringify({action:"bulkImport",trucks:trucksArr,staff:staffArr})}).catch(err=>console.warn("sync (bulkImport) failed:",err));
 }
 
+function restoreSelectedDriverTruck(){
+try{
+let savedId=localStorage.getItem("driverSelectedTruckId");
+if(!savedId)return;
+let idx=trucks.findIndex(t=>t.id===savedId);
+if(idx>=0&&document.getElementById("driverTruck"))driverTruck.value=idx;
+}catch(e){}
+}
+
 async function initFromServer(){
 try{
 let res=await apiGetTrucks();
@@ -262,7 +271,7 @@ if(res&&res.ok&&Array.isArray(res.staff)){
 staffList.length=0;
 res.staff.forEach(n=>staffList.push(n));
 }
-populate();loadJob();render();onTruckChange();populateAdminDriverSelect();onAdminTruckChange();
+populate();loadJob();restoreSelectedDriverTruck();render();onTruckChange();populateAdminDriverSelect();onAdminTruckChange();
 }catch(err){
 console.warn("ไม่สามารถเชื่อมต่อฐานข้อมูลออนไลน์ได้ ใช้ข้อมูลตัวอย่างในเครื่องไปก่อน (จะไม่เขียนข้อมูลตัวอย่างกลับไปที่เซิร์ฟเวอร์)",err);
 }
@@ -776,6 +785,11 @@ selected=newSelected;
 // หลัง refresh/มือถือรีโหลดหน้าเองตอนสลับแอป) ให้ถือว่ายังยืนยันตัวตนอยู่ ไม่ต้องถ่ายรูปซ้ำ
 // แต่ถ้าเป็นการยืนยันจากวันก่อนหน้า (ข้ามวันมาแล้ว) ต้องยืนยันใหม่เพื่อความปลอดภัย
 verifiedFor=isVerifiedToday(trucks[newSelected])?newSelected:null;
+// จำทะเบียนรถที่เลือกไว้ (ใช้ทะเบียนแทน index เพราะลำดับรถอาจเปลี่ยนได้ระหว่างการซิงก์)
+// กันไม่ให้กระโดดกลับไปที่รถคันแรกสุดทุกครั้งที่รีเฟรช/มือถือรีโหลดหน้าเอง
+try{
+if(trucks[newSelected])localStorage.setItem("driverSelectedTruckId",trucks[newSelected].id);
+}catch(e){}
 showDriver();
 renderReasonSection();
 renderVerify();
@@ -1088,7 +1102,7 @@ switchToTab(b.dataset.page);
 });
 
 setInterval(()=>clock.textContent=now(),1000);
-populate();loadJob();render();onTruckChange();populateAdminDriverSelect();onAdminTruckChange();
+populate();loadJob();restoreSelectedDriverTruck();render();onTruckChange();populateAdminDriverSelect();onAdminTruckChange();
 initFromServer();
 try{
 let savedTab=localStorage.getItem("activeTab");
