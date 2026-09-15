@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V35</title>
+<title>Transport Real-Time Control V36</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V35 • กลับไปเช็คข้อมูลทุก 20 วินาทีเหมือนเดิม (ไม่ใช่ปัญหาโควตา)</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V36 • ลองเชื่อมต่อใหม่อัตโนมัติก่อนขึ้นแถบเตือน กันกระพริบ</div></div>
 <div id="clock"></div>
 </header>
 
@@ -235,6 +235,24 @@ const API_URL="https://script.google.com/macros/s/AKfycbx5r1hTUlJW0UoydggBIvNVbe
 function apiGetTrucks(){
 return fetch(API_URL).then(r=>r.json());
 }
+
+function delay(ms){return new Promise(res=>setTimeout(res,ms));}
+
+// ลองดึงข้อมูลใหม่อีกครั้งก่อนจะถือว่าเชื่อมต่อไม่สำเร็จจริง กันแถบเตือนกระพริบเวลาสะดุดแค่ชั่วครู่
+async function apiGetTrucksWithRetry(){
+try{
+let res=await apiGetTrucks();
+if(res&&res.ok&&Array.isArray(res.trucks))return res;
+throw new Error("invalid response, retrying");
+}catch(err){
+await delay(2000);
+try{
+return await apiGetTrucks();
+}catch(err2){
+throw err2;
+}
+}
+}
 let recentLocalSaves={};
 function apiSaveTruck(t){
 recentLocalSaves[t.id]=Date.now();
@@ -272,7 +290,7 @@ if(el)el.style.display=show?"block":"none";
 
 async function initFromServer(){
 try{
-let res=await apiGetTrucks();
+let res=await apiGetTrucksWithRetry();
 if(res&&res.ok&&Array.isArray(res.trucks)){
 trucks.length=0;
 res.trucks.forEach(t=>trucks.push(t));
@@ -1146,7 +1164,7 @@ if(savedTab&&document.getElementById(savedTab))switchToTab(savedTab);
 // ที่กำลังทำรายการอยู่ (เช่น ถ่ายรูปยืนยันตัวตนค้าง) เพื่อไม่ให้ข้อมูลที่พิมพ์ค้างหาย
 async function pollForUpdates(){
 try{
-let res=await apiGetTrucks();
+let res=await apiGetTrucksWithRetry();
 if(res&&res.ok&&Array.isArray(res.trucks)){
 res.trucks.forEach(serverT=>{
 let idx=trucks.findIndex(t=>t.id===serverT.id);
