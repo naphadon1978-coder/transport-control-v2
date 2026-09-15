@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V32</title>
+<title>Transport Real-Time Control V33</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,9 +36,13 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V32 • แก้เลขที่เที่ยวสำหรับรถทะเบียนใหม่เอี่ยมที่ไม่เคยมีกิจกรรมเลย</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V33 • เพิ่มแถบเตือนเมื่อเชื่อมต่อฐานข้อมูลไม่สำเร็จ</div></div>
 <div id="clock"></div>
 </header>
+
+<div id="connectionWarning" style="display:none;background:#b91c1c;color:#fff;text-align:center;padding:10px;font-weight:700">
+⚠️ เชื่อมต่อฐานข้อมูล Google Sheets ไม่สำเร็จ — ข้อมูลที่เห็นอาจไม่ใช่ข้อมูลล่าสุด กรุณาแจ้งผู้ดูแลระบบ
+</div>
 
 <nav>
 <button class="tab active" data-page="dashboard">Dashboard</button>
@@ -261,12 +265,20 @@ if(idx>=0&&document.getElementById("driverTruck"))driverTruck.value=idx;
 }catch(e){}
 }
 
+function setConnectionWarning(show){
+let el=document.getElementById("connectionWarning");
+if(el)el.style.display=show?"block":"none";
+}
+
 async function initFromServer(){
 try{
 let res=await apiGetTrucks();
 if(res&&res.ok&&Array.isArray(res.trucks)){
 trucks.length=0;
 res.trucks.forEach(t=>trucks.push(t));
+setConnectionWarning(false);
+}else{
+setConnectionWarning(true);
 }
 if(res&&res.ok&&Array.isArray(res.staff)){
 staffList.length=0;
@@ -275,6 +287,7 @@ res.staff.forEach(n=>staffList.push(n));
 populate();loadJob();restoreSelectedDriverTruck();render();onTruckChange();populateAdminDriverSelect();onAdminTruckChange();
 }catch(err){
 console.warn("ไม่สามารถเชื่อมต่อฐานข้อมูลออนไลน์ได้ ใช้ข้อมูลตัวอย่างในเครื่องไปก่อน (จะไม่เขียนข้อมูลตัวอย่างกลับไปที่เซิร์ฟเวอร์)",err);
+setConnectionWarning(true);
 }
 }
 
@@ -1143,6 +1156,9 @@ if(hasVeryFreshLocalSave)return; // เพิ่งบันทึกจาก�
 if(idx>=0)trucks[idx]=serverT;
 else trucks.push(serverT);
 });
+setConnectionWarning(false);
+}else{
+setConnectionWarning(true);
 }
 if(res&&res.ok&&Array.isArray(res.staff)){
 res.staff.forEach(n=>{if(!staffList.includes(n))staffList.push(n);});
@@ -1154,6 +1170,7 @@ populateAdminDriverSelect();
 // เพื่อไม่ให้ข้อมูลที่กำลังทำอยู่หายไปกลางคัน
 showDriver();
 }catch(err){
+setConnectionWarning(true);
 console.warn("พื้นหลัง: เช็คข้อมูลใหม่จากเซิร์ฟเวอร์ไม่สำเร็จ",err);
 }
 }
