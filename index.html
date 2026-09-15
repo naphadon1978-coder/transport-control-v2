@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V36</title>
+<title>Transport Real-Time Control V37</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V36 • ลองเชื่อมต่อใหม่อัตโนมัติก่อนขึ้นแถบเตือน กันกระพริบ</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V37 • เพิ่มความทนทาน ลองเชื่อมต่อใหม่สูงสุด 3 ครั้งก่อนแจ้งเตือน</div></div>
 <div id="clock"></div>
 </header>
 
@@ -240,18 +240,19 @@ function delay(ms){return new Promise(res=>setTimeout(res,ms));}
 
 // ลองดึงข้อมูลใหม่อีกครั้งก่อนจะถือว่าเชื่อมต่อไม่สำเร็จจริง กันแถบเตือนกระพริบเวลาสะดุดแค่ชั่วครู่
 async function apiGetTrucksWithRetry(){
+let delays=[0,2000,5000]; // ลองทันที, รอ 2 วิ, รอ 5 วิ รวม 3 ครั้งก่อนยอมแพ้
+let lastErr=null;
+for(let i=0;i<delays.length;i++){
+if(delays[i])await delay(delays[i]);
 try{
 let res=await apiGetTrucks();
 if(res&&res.ok&&Array.isArray(res.trucks))return res;
-throw new Error("invalid response, retrying");
+lastErr=new Error("invalid response");
 }catch(err){
-await delay(2000);
-try{
-return await apiGetTrucks();
-}catch(err2){
-throw err2;
+lastErr=err;
 }
 }
+throw lastErr;
 }
 let recentLocalSaves={};
 function apiSaveTruck(t){
