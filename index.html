@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V33</title>
+<title>Transport Real-Time Control V34</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V33 • เพิ่มแถบเตือนเมื่อเชื่อมต่อฐานข้อมูลไม่สำเร็จ</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V34 • ลดความถี่เช็คข้อมูลเหลือ 45 วินาที ประหยัดโควตา Apps Script</div></div>
 <div id="clock"></div>
 </header>
 
@@ -1174,6 +1174,6 @@ setConnectionWarning(true);
 console.warn("พื้นหลัง: เช็คข้อมูลใหม่จากเซิร์ฟเวอร์ไม่สำเร็จ",err);
 }
 }
-setInterval(pollForUpdates,20000);
+setInterval(pollForUpdates,45000);
 </script>
 </body></html>
