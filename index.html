@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V37</title>
+<title>Transport Real-Time Control V38</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V37 • เพิ่มความทนทาน ลองเชื่อมต่อใหม่สูงสุด 3 ครั้งก่อนแจ้งเตือน</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V38 • ทดสอบลดโหลด: เช็คทุก 60 วิ + หยุดเช็คเมื่อไม่ได้เปิดดูแท็บนี้</div></div>
 <div id="clock"></div>
 </header>
 
@@ -1164,6 +1164,7 @@ if(savedTab&&document.getElementById(savedTab))switchToTab(savedTab);
 // อัปเดตเฉพาะ trucks/staffList + เรียก render() เท่านั้น ไม่แตะหน้า Driver Mobile
 // ที่กำลังทำรายการอยู่ (เช่น ถ่ายรูปยืนยันตัวตนค้าง) เพื่อไม่ให้ข้อมูลที่พิมพ์ค้างหาย
 async function pollForUpdates(){
+if(document.hidden)return; // แท็บนี้ไม่ได้เปิดดูอยู่ตอนนี้ ข้ามการเช็ครอบนี้ไปก่อน ลดจำนวนครั้งที่เรียกใช้ Apps Script โดยไม่จำเป็น
 try{
 let res=await apiGetTrucksWithRetry();
 if(res&&res.ok&&Array.isArray(res.trucks)){
@@ -1193,6 +1194,9 @@ setConnectionWarning(true);
 console.warn("พื้นหลัง: เช็คข้อมูลใหม่จากเซิร์ฟเวอร์ไม่สำเร็จ",err);
 }
 }
-setInterval(pollForUpdates,20000);
+setInterval(pollForUpdates,60000);
+document.addEventListener("visibilitychange",()=>{
+if(!document.hidden)pollForUpdates(); // กลับมาเปิดแท็บนี้อีกครั้ง เช็คข้อมูลใหม่ทันทีแทนที่จะรอรอบถัดไป
+});
 </script>
 </body></html>
