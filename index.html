@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V40</title>
+<title>Transport Real-Time Control V41</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V40 • แก้บั๊กร้ายแรง: รายงานปัญหาหน้างานไม่เคยส่งไป Google Sheets เลย</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V41 • บังคับเบราว์เซอร์ไม่แคชข้อมูลรถเอง กันข้อมูลเก่าค้าง</div></div>
 <div id="clock"></div>
 </header>
 
@@ -233,7 +233,7 @@ let selected=0,verifiedFor=null;
 const API_URL="https://script.google.com/macros/s/AKfycbx5r1hTUlJW0UoydggBIvNVbejfbjOfsYkqTXlGqBtBwGG4gFU33NumyuwfkB5KBpU2/exec";
 
 function apiGetTrucks(){
-return fetch(API_URL).then(r=>r.json());
+return fetch(API_URL,{cache:"no-store"}).then(r=>r.json());
 }
 
 function delay(ms){return new Promise(res=>setTimeout(res,ms));}
