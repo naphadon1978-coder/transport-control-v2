@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V38</title>
+<title>Transport Real-Time Control V39</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V38 • ทดสอบลดโหลด: เช็คทุก 60 วิ + หยุดเช็คเมื่อไม่ได้เปิดดูแท็บนี้</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V39 • สุ่มเวลาเช็คข้อมูล 25-30 วิ กันหลายเครื่องชนกันจนเชื่อมต่อไม่ได้</div></div>
 <div id="clock"></div>
 </header>
 
@@ -1194,7 +1194,13 @@ setConnectionWarning(true);
 console.warn("พื้นหลัง: เช็คข้อมูลใหม่จากเซิร์ฟเวอร์ไม่สำเร็จ",err);
 }
 }
-setInterval(pollForUpdates,60000);
+// สุ่มเวลาห่างของแต่ละรอบเล็กน้อย (25-30 วินาที) แทนที่จะตรงเวลาเป๊ะๆ ทุกเครื่อง
+// กันไม่ให้หลายอุปกรณ์ (คอม+มือถือ) ยิงคำขอไปพร้อมกันเป๊ะๆ จนชนขีดจำกัด "ทำงานพร้อมกัน" ของ Apps Script
+function scheduleNextPoll(){
+let jitter=25000+Math.floor(Math.random()*5000);
+setTimeout(()=>{pollForUpdates().finally(scheduleNextPoll);},jitter);
+}
+scheduleNextPoll();
 document.addEventListener("visibilitychange",()=>{
 if(!document.hidden)pollForUpdates(); // กลับมาเปิดแท็บนี้อีกครั้ง เช็คข้อมูลใหม่ทันทีแทนที่จะรอรอบถัดไป
 });
