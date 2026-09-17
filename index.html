@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Transport Real-Time Control V39</title>
+<title>Transport Real-Time Control V40</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans Thai",sans-serif;background:#f4f7fb;color:#172033}
 header{background:#102a56;color:#fff;padding:18px 26px;display:flex;justify-content:space-between;align-items:center}
@@ -36,7 +36,7 @@ button.primary:disabled{background:#94a3b8;cursor:not-allowed}
 </head>
 <body>
 <header>
-<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V39 • สุ่มเวลาเช็คข้อมูล 25-30 วิ กันหลายเครื่องชนกันจนเชื่อมต่อไม่ได้</div></div>
+<div><h1>🚚 TRANSPORT REAL-TIME CONTROL</h1><div class="sub">Prototype V40 • แก้บั๊กร้ายแรง: รายงานปัญหาหน้างานไม่เคยส่งไป Google Sheets เลย</div></div>
 <div id="clock"></div>
 </header>
 
@@ -951,6 +951,7 @@ stopsArr[activeStopIdx].problem="อื่นๆ: "+txt;
 }else stopsArr[activeStopIdx].problem=val;
 t.time=now();
 render();showDriver();renderReasonSection();
+apiSaveTruck(t);
 }
 
 function resolveProblem(i){
@@ -958,6 +959,7 @@ let t=trucks[i],activeStopIdx=currentStopIndex(t);
 if(activeStopIdx>=0&&t.stops[activeStopIdx])t.stops[activeStopIdx].problem=null;
 t.time=now();
 render();showDriver();renderReasonSection();
+apiSaveTruck(t);
 }
 
 function renderStaffManager(){
